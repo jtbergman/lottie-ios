@@ -77,7 +77,8 @@ extension Trim {
 
   /// The `strokeStart` and `strokeEnd` keyframes to apply to a `CAShapeLayer`
   fileprivate func caShapeLayerKeyframes(context: LayerAnimationContext) throws
-    -> (strokeStart: KeyframeGroup<Vector1D>, strokeEnd: KeyframeGroup<Vector1D>) {
+    -> (strokeStart: KeyframeGroup<Vector1D>, strokeEnd: KeyframeGroup<Vector1D>)
+  {
     let strokeStart: KeyframeGroup<Vector1D>
     let strokeEnd: KeyframeGroup<Vector1D>
 
@@ -108,9 +109,10 @@ extension Trim {
     if
       (adjustedStrokeStart + adjustedStrokeEnd).contains(where: {
         $0.value.cgFloatValue < 0 || $0.value.cgFloatValue > 100
-      }) {
+      })
+    {
       try context.logCompatibilityIssue("""
-        The CoreAnimation rendering engine doesn't support Trim offsets
+        The Core Animation rendering engine doesn't support Trim offsets with adjusted stroke values outside the range [0, 100]
         """)
       return (strokeStart: strokeStart, strokeEnd: strokeEnd)
     }
@@ -144,14 +146,23 @@ extension Trim {
     return true
   }
 
-  /// Adjusts a `KeyframeGroup` associated with a `strokeStart` or `strokeEnd` to account
-  /// for trim offsets. The CoreAnimation rendering engine does not fully support trim offsets. If applying
-  /// the offsets results in a `KeyframeGroup` with all values in the range `[0, 1]` then the offsets
-  /// can be supported.
+  /// Adjusts `strokeStart` or `strokeEnd` to account for trim offsets
+  ///
+  /// Trim offsets shift `strokeStart` and `strokeEnd` equally. Since Core Animation does not support
+  /// offsets directly, each trim offset keyframe must be converted to a new keyframe for both  `strokeStart`
+  /// and `strokeEnd`. These adjusted stroke values must be valid in Core Animation, otherwise the trim
+  /// offsets cannot be supported.
+  ///
+  /// In Core Animation, `strokeStart` and `strokeEnd` are points in the range `[0, 1]` subject
+  /// to the requirement that `strokeStart <= strokeEnd`. This means that animations that cross
+  /// the "zero point" of the path cannot be supported. For example, stroking `[0.8, 0.2]` is not possible.
+  ///
+  /// Therefore, the adjusted keyframes must all be in the range `[0, 100]`.
   private func adjustKeyframesForTrimOffsets(
     strokeKeyframes: ContiguousArray<Keyframe<Vector1D>>,
     offsetKeyframes: ContiguousArray<Keyframe<Vector1D>>,
-    context _: LayerAnimationContext) throws -> ContiguousArray<Keyframe<Vector1D>> {
+    context _: LayerAnimationContext) throws -> ContiguousArray<Keyframe<Vector1D>>
+  {
     guard
       !offsetKeyframes.isEmpty,
       offsetKeyframes.contains(where: { $0.value.cgFloatValue != 0 })
