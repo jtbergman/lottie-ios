@@ -19,7 +19,9 @@ extension CAShapeLayer {
         for path in paths {
           combinedPath.addPath(path.cgPath())
         }
-        return combinedPath
+        return combinedPath.duplicated(
+            times: pathCopiesRequired[ObjectIdentifier(self), default: 2]
+          )
       },
       context: context)
   }

@@ -15,8 +15,29 @@ extension CAShapeLayer {
       for: .path,
       keyframes: customPath.keyframes,
       value: { pathKeyframe in
-        pathKeyframe.cgPath()
+          pathKeyframe
+              .cgPath()
+              .duplicated(
+                times: pathCopiesRequired[ObjectIdentifier(self), default: 2]
+              )
       },
       context: context)
   }
+}
+
+extension CGPath {
+    /// Duplicates the same `CGPath` multiple times
+    ///
+    /// - Parameter times: The number of copies of the path that should be return
+    func duplicated(times: Int) -> CGPath {
+        let immutablePath = self
+        guard let mutablePath = self.mutableCopy() else {
+            return self
+        }
+        for _ in 1 ..< times {
+            print("Copied")
+            mutablePath.addPath(immutablePath)
+        }
+        return mutablePath
+    }
 }

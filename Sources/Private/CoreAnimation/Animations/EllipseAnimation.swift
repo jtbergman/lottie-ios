@@ -20,6 +20,9 @@ extension CAShapeLayer {
           center: try ellipse.position.exactlyOneKeyframe(context: context, description: "ellipse position").value.pointValue,
           direction: ellipse.direction)
           .cgPath()
+          .duplicated(
+            times: pathCopiesRequired[ObjectIdentifier(self), default: 2]
+          )
       },
       context: context)
   }

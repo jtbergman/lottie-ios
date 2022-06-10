@@ -13,6 +13,9 @@ protocol AnimationLayer: CALayer {
   func setupAnimations(context: LayerAnimationContext) throws
 }
 
+/// The number of path copies required by a `CAShapeLayer`
+var pathCopiesRequired = [ObjectIdentifier: Int]()
+
 // MARK: - LayerAnimationContext
 
 // Context describing the timing parameters of the current animation

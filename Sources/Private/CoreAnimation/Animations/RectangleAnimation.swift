@@ -23,6 +23,9 @@ extension CAShapeLayer {
             .exactlyOneKeyframe(context: context, description: "rectangle cornerRadius").value.cgFloatValue,
           direction: rectangle.direction)
           .cgPath()
+          .duplicated(
+            times: pathCopiesRequired[ObjectIdentifier(self), default: 2]
+          )
       },
       context: context)
   }

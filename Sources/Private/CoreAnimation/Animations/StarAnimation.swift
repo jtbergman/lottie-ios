@@ -54,7 +54,9 @@ extension CAShapeLayer {
           rotation: try star.rotation
             .exactlyOneKeyframe(context: context, description: "rotation").value.cgFloatValue,
           direction: star.direction)
-          .cgPath()
+          .cgPath().duplicated(
+            times: pathCopiesRequired[ObjectIdentifier(self), default: 2]
+          )
       },
       context: context)
   }
@@ -83,7 +85,9 @@ extension CAShapeLayer {
           rotation: try star.rotation
             .exactlyOneKeyframe(context: context, description: "rotation").value.cgFloatValue,
           direction: star.direction)
-          .cgPath()
+          .cgPath().duplicated(
+            times: pathCopiesRequired[ObjectIdentifier(self), default: 2]
+          )
       },
       context: context)
   }

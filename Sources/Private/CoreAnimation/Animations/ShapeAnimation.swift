@@ -93,29 +93,70 @@ extension Trim {
       strokeStart = start
       strokeEnd = end
     }
+    
+    print("JT: \(strokeStart.keyframes.map({ $0.value.value }))")
+    print("JT: \(strokeEnd.keyframes.map({ $0.value.value }))")
+    print("JT: \(offset.keyframes.map({ $0.value.value }))")
 
     // Adjust the keyframes to account for trim offsets if possible
-    let adjustedStrokeStart = try adjustKeyframesForTrimOffsets(
+    var adjustedStrokeStart = try adjustKeyframesForTrimOffsets(
       strokeKeyframes: strokeStart.keyframes,
       offsetKeyframes: offset.keyframes,
       context: context)
 
-    let adjustedStrokeEnd = try adjustKeyframesForTrimOffsets(
+    var adjustedStrokeEnd = try adjustKeyframesForTrimOffsets(
       strokeKeyframes: strokeEnd.keyframes,
       offsetKeyframes: offset.keyframes,
       context: context)
+    
 
     // Validate the adjusted keyframes and fallback on original if invalid
-    if
-      (adjustedStrokeStart + adjustedStrokeEnd).contains(where: {
-        $0.value.cgFloatValue < 0 || $0.value.cgFloatValue > 100
+    let maxStroke = adjustedStrokeEnd.max(by: { $0.value.cgFloatValue < $1.value.cgFloatValue})
+    if let maxStrokeValue = maxStroke?.value.cgFloatValue, maxStrokeValue > 100 {
+      print(maxStrokeValue)
+      let pathCopies = Int(ceil(maxStrokeValue / 100))
+      pathCopiesRequired[ObjectIdentifier(self)] = pathCopies
+      
+      adjustedStrokeStart = ContiguousArray(adjustedStrokeStart.map { keyframe in
+        let adjustedValue = keyframe.value.value / Double(pathCopies)
+        return Keyframe<Vector1D>(
+          value: Vector1D(adjustedValue),
+          time: keyframe.time,
+          isHold: keyframe.isHold,
+          inTangent: keyframe.inTangent,
+          outTangent: keyframe.outTangent,
+          spatialInTangent: keyframe.spatialInTangent,
+          spatialOutTangent: keyframe.spatialOutTangent
+        )
       })
-    {
-      try context.logCompatibilityIssue("""
-        The Core Animation rendering engine doesn't support Trim offsets with adjusted stroke values outside the range [0, 100]
-        """)
-      return (strokeStart: strokeStart, strokeEnd: strokeEnd)
+      
+      adjustedStrokeEnd = ContiguousArray(adjustedStrokeEnd.map { keyframe in
+        let adjustedValue = keyframe.value.value / Double(pathCopies)
+        return Keyframe<Vector1D>(
+          value: Vector1D(adjustedValue),
+          time: keyframe.time,
+          isHold: keyframe.isHold,
+          inTangent: keyframe.inTangent,
+          outTangent: keyframe.outTangent,
+          spatialInTangent: keyframe.spatialInTangent,
+          spatialOutTangent: keyframe.spatialOutTangent
+        )
+      })
+      
+      print("JT: Making \(pathCopies) copies")
+      print("JT: \(adjustedStrokeStart.map({ $0.value.value }))")
+      print("JT: \(adjustedStrokeEnd.map({ $0.value.value }))")
     }
+//    if
+//      (adjustedStrokeStart + adjustedStrokeEnd).contains(where: {
+//        $0.value.cgFloatValue < 0 || $0.value.cgFloatValue > 100
+//      })
+//    {
+//      try context.logCompatibilityIssue("""
+//        The Core Animation rendering engine doesn't support Trim offsets with adjusted stroke values outside the range [0, 100]
+//        """)
+//      return (strokeStart: strokeStart, strokeEnd: strokeEnd)
+//    }
 
     return (
       strokeStart: KeyframeGroup<Vector1D>(keyframes: adjustedStrokeStart),
